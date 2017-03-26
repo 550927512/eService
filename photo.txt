@@ -1,0 +1,873 @@
+$(function() {
+    //去掉页面按钮的点击事件
+    $(".clearfix").attr("href","#");
+    $(".mobile-firstlevel").eq(0).find("a").eq(0).attr("href","#");
+    $(".mobile-firstlevel").eq(1).find("a").eq(0).attr("href","#");
+    $(".mobile-firstlevel").eq(1).next().find("li").eq(0).find("a").attr("href","#");
+    $(".mobile-firstlevel").eq(1).next().find("li").eq(1).find("a").attr("href","#");
+    $(".mobile-firstlevel").eq(1).find("a").eq(0).attr("href","#");
+    $(".mobile-firstlevel").eq(2).find("a").eq(0).attr("href","#");
+    $(".mobile-firstlevel").eq(3).find("a").eq(0).attr("href","#");
+    $(".mobile-firstlevel").eq(3).next().find("li").eq(0).find("a").attr("href","#");
+    $(".mobile-firstlevel").eq(3).next().find("li").eq(1).find("a").attr("href","#");
+    $(".mobile-firstlevel").eq(4).find("a").eq(0).attr("href","#");
+    $(".navbar-one .navbar-brand").attr("href","#");//PC版LOGO
+    $(".navbar-one").find("li").eq(0).find("a").attr("href","#");
+    $(".navbar-one").find("li").eq(1).find("a").attr("href","#");
+    $(".navbar-one").find("li").eq(4).find("a").attr("href","#");
+    $(".navbar-one").find("li").eq(5).find("a").attr("href","#");
+    $(".navbar-one").find("li").eq(8).find("a").attr("href","#");
+    $(".contact-dropdown-menu").find("li").eq(0).find("a").attr("href","#");
+    $(".contact-dropdown-menu").find("li").eq(2).find("a").attr("href","#");
+    $(".contact-dropdown-menu").find("li").eq(4).find("a").attr("href","#");
+    $(".fs16").eq(1).text('门、急诊收据及费用清单(0)');
+    $(".fs16").eq(4).text('门、急诊病例(0)');
+    $(".fs16").eq(5).text('相关检查报告(0)');
+
+    /* 待删除图片标志位 */
+    $( 'ul li:not(".photo_li")').click(function(){
+        $(this).addClass('select_border');
+        $('ul li').not(this).removeClass('select_border');
+        downloadPic();
+    });
+
+    /* 删除按钮 */
+    $('.a_delete').click(function(){
+        $('.deleteData').show();
+        $('.delete_alert').show();
+    });
+
+    /* 确认删除图片 */
+    $('.confirm_delete').click(function(){
+        console.log(1);
+        $('.deleteData').hide();
+        $('.delete_alert').hide();
+        deletePic($('li.select_border'));
+        $('li.select_border').remove();
+        checkNext();
+    });
+
+    /* 取消删除图片 */
+    $('.cancel_delete').click(function(){
+        $('.deleteData').hide();
+        $('.delete_alert').hide();
+    });
+
+	/*资料样本点击事件*/
+    //门急诊收据及医疗费用报销
+    $(".example_list").click(function(){
+        //F02gd.jpg:收据 F03gd.jpg：费用
+        $(".sample_double .upload_photo_big img").attr("src","/content/dam/cn-eservice/images/F02gd.jpg");
+        $(".sample_double").show();
+        $(".sample_single").hide();
+        $('a[href="#forindividual"]').click(function(){
+            $(".sample_double .upload_photo_big img").attr("src","/content/dam/cn-eservice/images/F02gd.jpg");
+        });
+         $('a[href="#forbusiness"]').click(function(){
+            $(".sample_double .upload_photo_big img").attr("src","/content/dam/cn-eservice/images/F03gd.jpg");
+        });
+
+    });
+    //其他报销证明
+    $(".deduction").click(function(){
+        //other_expense_account.JPG
+        $(".sample_single .sub-title").text("其他报销证明");
+        $(".sample_single .upload_photo_big img").attr("src","/content/dam/cn-eservice/images/other_expense_account.JPG");
+        $(".sample_double").hide();
+        $(".sample_single").show();
+    });
+    //门急诊病例
+    $(".emergency_case").click(function(){
+        //F01gd.jpg
+        $(".sample_single .sub-title").text("门急诊病例");
+        $(".sample_single .upload_photo_big img").attr("src","/content/dam/cn-eservice/images/F01gd.jpg");
+        $(".sample_double").hide();
+        $(".sample_single").show();
+    });
+    //相关检查报告
+    $(".check_report").click(function(){
+        //H0gd.jpg
+        $(".sample_single .sub-title").text("相关检查报告");
+        $(".sample_single .upload_photo_big img").attr("src","/content/dam/cn-eservice/images/H0gd.jpg");
+        $(".sample_double").hide();
+        $(".sample_single").show();
+    });
+
+
+
+    /* 其他报销证明单选框 */
+    //$('.clinic_expense').parent().css('display',' none');
+    if($('input[name="receipt_des"]').is(':checked')){
+        $('.clinic_expense').parent().css('display',' block');
+        checkButton = true;
+        checkNext();
+    }else{
+        $('.clinic_expense').parent().css('display',' none');
+        checkButton = false;
+    }
+    $('input[name="receipt_des"]').click(function(){
+        if($(this).is(':checked')){
+            $('.clinic_expense').parent().css('display',' block');
+            checkButton = true;
+            checkNext();
+        }else{
+            $('.clinic_expense').parent().css('display',' none');
+            checkButton = false;
+        }
+    });
+
+    /* 图片缩放尺寸 */
+    var PICTURE_HEIGHT   = 1280;
+    var THUMBNAIL_HEIGHT = 150;
+
+    /* 获取话术 */
+    // $('.fs16:not(".fs16[style=\'color: red;\']")');
+    // var scriptList = $(".fs16").filter(x => x % 3 != 0).map((i,item) => $(item).text().substring(0, $(item).text().length - 3));
+    var scriptList = $(".fs16").filter(function(index) {
+        return index % 3 != 0;
+    }).map(function(i, item) {
+        return $(item).text().substring(0, $(item).text().length - 3);
+    });
+
+    /* 图片类型 */
+    var picTypeList = ["receipt", "expense", "case", "report"];
+
+    /* 是否勾选单选框 */
+    var checkButton = false;
+
+    /* 图片计数容器 */
+    var pictureList = {
+        receiptType : "",
+        expenseType : "",
+        caseType : "",
+        reportType : "",
+        receipt : 0,
+        expense : 0,
+        case : 0,
+        report : 0
+    };
+    // picTypeList.forEach((el, i) => pictureList[el + 'Type'] = scriptList[i]);
+    picTypeList.forEach(function (el, i) {
+        return pictureList[el + 'Type'] = scriptList[i];
+    });
+
+    /* 后台数据 */
+    var loginData = Public.getCoreRespData();
+    var processID = sessionStorage.getItem("processId_claim");
+    var processDetailID = loginData.processDetailId;
+
+    /* 待克隆图片节点 */
+    var picNode = $(".photoUpload li:not('.photo_li')").detach().eq(0);
+
+    checkNext();
+
+    /*上一步*/
+    //$('.gotoLast').find('button').attr('onclick', 'history.back();');
+
+    /* 初始化页面 */
+    intoPath = window.sessionStorage.getItem("isHistoryPath");
+   // alert(intoPath);
+    if ("0" == intoPath) {
+
+        /* 出险人 */
+        var danger_person = $.parseJSON(sessionStorage.getItem("danger_person"));
+        $('label[form-target-name="outofDanger"]').find('p').text('出险人：' + danger_person.name);
+
+         /* 读取页面，获得processID和图片数据 */
+        sendAjax(function (data) {
+            var picData = $.parseJSON(data);
+            var clone;
+            /* 遍历图片数据插入页面 */
+            $.each(picData["picDataList"], function(index, item) {
+                if("expense" == item.picType && (null != item.thumbnail || "" != item.thumbnail)){
+                    $('input[name="receipt_des"]').attr("checked",true);
+                    if($('input[name="receipt_des"]').is(':checked')){
+                        $('.clinic_expense').parent().css('display',' block');
+                        checkButton = true;
+                        checkNext();
+                    }else{
+                        $('.clinic_expense').parent().css('display',' none');
+                        checkButton = false;
+                    }
+                }
+                clone = picNode.clone(true);
+                clone.find('img').attr('src', addTitle(item.thumbnail));
+                clone.find('img').attr('picture_id', item.picture);
+                pictureList[item.picType]++;
+                // $('.photoUpload').filter((i, el) => $(el).attr("class").split(' ').pop() == item.picType).append(clone);
+                $('.photoUpload').filter(function(i, el) {
+                    return $(el).attr("class").split(' ').pop() == item.picType;
+                }).append(clone);
+            });
+
+            picCount();
+            /* 检查用户设备 */
+            checkDevice();
+            checkNext();
+        }, "/Claim/LoadThumbnail");
+    } else {
+        /* 读取页面，获得processID和图片数据 */
+        sendAjax(function (data) {
+            var picData = $.parseJSON(data);
+            console.log(JSON.stringify(picData))
+
+            console.log("processID: " + processID);
+            console.log("picData length: " + picData["picDataList"].length);
+
+            if (picData.history === "Y") {
+                var clone;
+                /* 遍历图片数据插入页面 */
+                $.each(picData["picDataList"], function(index, item) {
+                    if("expense" == item.picType && (null != item.thumbnail || "" != item.thumbnail)){
+                        $('input[name="receipt_des"]').attr("checked",true);
+                        if($('input[name="receipt_des"]').is(':checked')){
+                            $('.clinic_expense').parent().css('display',' block');
+                            checkButton = true;
+                            checkNext();
+                        }else{
+                            $('.clinic_expense').parent().css('display',' none');
+                            checkButton = false;
+                        }
+                    }
+                    clone = picNode.clone(true);
+                    clone.find('img').attr('src', addTitle(item.thumbnail));
+                    clone.find('img').attr('picture_id', item.picture);
+                    pictureList[item.picType]++;
+                    // $('.photoUpload').filter((i, el) => $(el).attr("class").split(' ').pop() == item.picType).append(clone);
+                    $('.photoUpload').filter(function(i, el) {
+                        return $(el).attr("class").split(' ').pop() == item.picType;
+                    }).append(clone);
+                });
+
+                picCount();
+            }
+
+            picCount();
+            /* 检查用户设备 */
+            checkDevice();
+            checkNext();
+        }, "/Claim/LoadThumbnail");
+
+        /* 读取历史 */
+        sendAjax2(function (data) {
+            var reportInfo = $.parseJSON(data);
+
+            if (reportInfo.history === "Y") {
+                /* 加载数据 */
+                $('label[form-target-name="outofDanger"]').find('p').text('出险人：' + reportInfo.participant.name);
+            }
+        }, "/DealClaim/LoadReportInfo");
+    }
+
+    /* 添加图片点击上传事件 */
+    // $("input[type='file']").eq(0).get(0).addEventListener("change", function(evt) {alert("dfadfa")}, false);
+    $("input[type='file']").click(function(){
+        $("input[type='file']").unbind();
+		$("input[type='file']").change(uploadPic);
+		//return false;
+    });
+
+    /* 图片上传事件 */
+    function uploadPic() {
+        //alert('hahahahha');
+        /* receipt  expense  case  report */
+        var picType = $(this).parents("ul").attr("class").split(' ').pop();
+        console.log("picType: " + picType);
+        var clone = picNode.clone(true);
+        renderFile(this.files[0], clone, $(this).parents("ul"), picType);
+        //return false;
+    }
+
+    /* Andorid图片上传事件 APP自动调用*/
+    function uploadPicApp(thumbnail, picture, picType) {
+        /* receipt  expense  case  report */
+        //alert("uploadPicAndroid!");
+        var clone = picNode.clone(true);
+
+        renderFileFromAndroid(thumbnail, picture, clone, picType);
+    }
+    uploadPicAppOuter = uploadPicApp;
+
+
+    /* 图片删除事件 */
+    function deletePic(node) {
+        //alert("1");
+        var picType = node.parents("ul").attr("class").split(' ').pop();
+        //alert("2");
+        console.log("delete picType: " + picType);
+        //alert("3");
+        var picture_id = node.find('img').attr('picture_id');
+        //alert("4");
+        sendAjax(function (data) {
+            console.log("delete success");
+            //alert("5");
+            //console.log("type of files: " + typeof($("input[type='file']")[0].files));
+            //alert("6");
+            $('input[type="file"]').val(null);
+            //alert("7");
+            pictureList[picType]--;
+            //alert("8");
+            picCount();
+        }, "/Claim/DeletePic", "", picture_id, picType);
+
+    }
+
+    /* 替换模态框图片 */
+    function downloadPic() {
+        /* 隐藏Tab */
+        $('.row.check_data_single').prev('.nav-switch').hide();
+
+        var picType = $(".select_border").parents("ul").attr("class").split(' ').pop();
+        var picture_id = $(".select_border").find('img').attr('picture_id');
+        sendAjax(function (data) {
+            var picData = $.parseJSON(data);
+            var pictureData = addTitle(picData["picData"]["picture"]);
+            $('.row.check_data_single .upload_photo_big').eq(0).find('img').attr('src', pictureData);
+
+            /* 摸态框标题 */
+            $('label[form-target-name="data_single"]').find("h4").text( pictureList[picType + 'Type']);
+
+        }, "/Claim/LoadPic", "", picture_id);
+    }
+
+    /**********************************************************************************/
+    /* 包装ajax */
+    function sendAjax(func, path, thumbnail, picture, picType, position) {
+        var reqStr = {};
+        reqStr.processID = processID;
+        reqStr.thumbnail = thumbnail || "";
+        reqStr.picture = picture || "";
+        reqStr.position = position || "";
+        reqStr.picType = picType || "";
+
+        var svcPath = Public.getServicePath() + path;
+        console.log(svcPath);
+        var reqData = {
+            inputJson: JSON.stringify(reqStr),
+            inputAuth: getLoginAuthJson()
+        };
+        Public.postAjax(svcPath, reqData, func);
+    }
+
+    /* 包装ajax */
+    function sendAjax2(func, path) {
+        var reqStr = {};
+        reqStr.processID = processID;
+        var svcPath = Public.getServicePath() + path;
+        console.log(svcPath);
+        var reqData = {
+            inputJson: JSON.stringify(reqStr),
+            inputAuth: getLoginAuthJson()
+        };
+        Public.postAjax(svcPath, reqData, func);
+    }
+
+    /* 上传图片 */
+    function renderFile(file, node, parent, picType) {
+        var fileSize = file.size;
+        var fileReader = new FileReader();
+        fileReader.onload = function(event) {
+            var result = event.target.result; //返回的dataURL
+            var image = new Image();
+            image.src = result;
+            image.onload = function() {
+                var thumbnailData = drawPic(THUMBNAIL_HEIGHT, this, fileSize);
+                var pictureData = drawPic(PICTURE_HEIGHT, this, fileSize);
+
+                /* 显示缩略图 */
+                node.find('img').attr('src', thumbnailData);
+                /* 上传图片base64流 */
+                sendAjax(function(data) {
+                    // alert(JSON.stringify(data));
+                    var picData = $.parseJSON(data);
+                    var picture_id = picData["picData"]["picture"];
+                    node.find('img').attr('picture_id', picture_id);
+                    parent.append(node);
+                    pictureList[picType]++;
+                    picCount();
+                }, "/Claim/UploadPic", removeTitle(thumbnailData), removeTitle(pictureData), picType);
+                checkNext();
+            }
+        }
+        fileReader.readAsDataURL(file);
+    }
+
+    /* 上传图片Android */
+    function renderFileFromAndroid(thumbnailData, pictureData, node, picType) {
+        node.find('img').attr('src', addTitle(thumbnailData));
+        $('.' + picType).append(node);
+        sendAjax(function(data) {
+            // alert("ajax success!");
+            var picData = $.parseJSON(data);
+            var picture_id = picData["picData"]["picture"];
+            //alert('picture_id: ' + picture_id);
+            node.find('img').attr('picture_id', picture_id);
+            $('.' + picType).append(node);
+            pictureList[picType]++;
+            picCount();
+        }, "/Claim/UploadPic", thumbnailData, pictureData, picType);
+        checkNext();
+    }
+
+    /* canvas重新画图 */
+    function drawPic(max_height, img, fileSize) {
+        //创建一个image对象，给canvas绘制使用
+        var canvas = document.createElement('canvas');
+        //设置image大小
+        var scale = 1;
+        if ((fileSize > 204800 || max_height == THUMBNAIL_HEIGHT) && (img.width > max_height || img.height > max_height)) {
+            scale = max_height / (img.width > img.height ? img.width : img.height);
+        }
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale; //计算等比缩小后图片宽高
+
+        var context = canvas.getContext('2d');
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        var newImageData = canvas.toDataURL("image/jpeg", 0.8); //重新生成图片
+
+        return newImageData;
+    }
+
+    /* 各类型图片计数 */
+    function picCount() {
+        /* 每种图片类型最多100张 */
+        var MAX_COUNT = 1;
+        var count = [];
+        count.push(pictureList.receipt);
+        count.push(pictureList.expense);
+        count.push(pictureList.case);
+        count.push(pictureList.report);
+        count.forEach(function (el, i) {
+            if (el == MAX_COUNT) {
+                $('input[type="file"]').eq(i).attr("disabled", "disabled");
+                // $('.photo_li').unbind('click');
+            } else {
+                // $('input[type="file"]').eq(i).attr("disabled", "false");
+            }
+        });
+        // $(".fs16").filter(x => x % 3 != 0).each((i, item) => {$(item).text($(item).text().replace(/\d+/g, count[i]))});
+        $(".fs16").filter(function(index) {
+            return index % 3 != 0;
+        }).each(function(i, item) {
+            return $(item).text($(item).text().replace(/\d+/g, count[i]));
+        });
+        // sessionStorage.setItem("picCount", count.reduce((a, b) => a + b));
+        sessionStorage.setItem("picCount", count.reduce(function (a, b){
+            return a + b;
+        }));
+
+        if (pictureList.receipt == 0 || pictureList.case == 0) {
+            $('.aiabase.parbase.button.section').eq(1).find('button').attr('disabled', true);
+        } else {
+            $('.aiabase.parbase.button.section').eq(1).find('button').attr('disabled', false);
+        }
+
+    }
+
+    function removeTitle(str) {
+        return str.replace("data:image/jpeg;base64,", '');
+    }
+
+    function addTitle(str){
+        return "data:image/jpeg;base64," + str;
+    }
+
+    /* 检查用户设备 */
+    function checkDevice() {
+        var browser = {
+            versions: function() {
+                var u = navigator.userAgent,
+                    app = navigator.appVersion;
+                return { //移动终端浏览器版本信息
+                    trident: u.indexOf('Trident') > -1, //IE内核
+                    presto: u.indexOf('Presto') > -1, //opera内核
+                    webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+                    gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+                    mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+                    ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+                    android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或uc浏览器
+                    iPhone: u.indexOf('iPhone') > -1, //是否为iPhone或者QQHD浏览器
+                    iPad: u.indexOf('iPad') > -1, //是否iPad
+                    webApp: u.indexOf('Safari') == -1 //是否web应该程序，没有头部与底部
+                };
+            }(),
+            language: (navigator.browserLanguage || navigator.language).toLowerCase()
+        }
+
+        if (browser.versions.mobile) { //判断是否是移动设备打开。browser代码在下面
+            console.log("移动端！");
+            //alert('---------chekDevice');
+            var ua = navigator.userAgent.toLowerCase(); //获取判断用的对象
+            var type = sessionStorage.getItem("loginType");
+            if (type === "app_android"||type === "app_ios") {
+                // alert("您使用App");
+                $('.photo_li').find('input').remove();
+                $('.photo_li').click(function() {
+                        var picType = $(this).parents("ul").attr("class").split(' ').pop();
+                        var cmr = plus.camera.getCamera();
+                        cmr.captureImage(function(path) {
+                            plus.io.resolveLocalFileSystemURL(path, function(entry) {
+                                var func = (type === 'app_ios') ? 'InterActionTool' : 'com.aia.eservice.InterActionTool';
+                                if(type === 'app_android'){
+                                    plus.android.invoke('com.aia.eservice.InterActionTool', 'ImageProcess', entry.toLocalURL(), picType);
+                                }else{
+                                    plus.ios.invoke('InterActionTool','imageProcess:info:',entry.toLocalURL(), picType);
+                                }
+
+                            }, function(e) {
+                                outLine("读取拍照文件错误：" + e.message);
+                            });
+                        }, function(e) {
+                            outLine("失败：" + e.message);
+                        }, {
+                            filename: "_doc/camera/",
+                            index: 1
+                        });
+                    }
+
+                )
+            } else if (ua.match(/MicroMessenger/i) == "micromessenger") {
+                //在微信中打开、
+                // alert("您使用微信客户端");
+            } else if (ua.match(/WeiBo/i) == "weibo") {
+                //在新浪微博客户端打开
+            } else if (ua.match(/QQ/i) == "qq") {
+                //在QQ空间打开
+            } else if (browser.versions.ios) {
+                //是否在IOS浏览器打开
+                // alert("您使用IOS浏览器");
+            } else if (browser.versions.android) {/*
+             //是否在安卓浏览器打开
+             console.log("Android!");
+             $('.photo_li').find('input').remove();
+             $('.photo_li').click(function() {
+             var picType = $(this).parents("ul").attr("class").split(' ').pop();
+             alert(" picType: " + picType);
+             var cmr = plus.camera.getCamera();
+             cmr.captureImage(function(path) {
+             plus.io.resolveLocalFileSystemURL(path, function(entry) {
+             var Main = plus.android.runtimeMainActivity();
+             plus.android.invoke(Main, 'ImageProcess', entry.toLocalURL(), picType);
+             }, function(e) {
+             outLine("读取拍照文件错误：" + e.message);
+             });
+             }, function(e) {
+             outLine("失败：" + e.message);
+             }, {
+             filename: "_doc/camera/",
+             index: 1
+             });
+             }
+
+             )
+             */}
+        } else {
+            //否则就是PC浏览器打开
+            alert("请使用移动设备拍照上传！");
+
+            //alert('电脑浏览器');
+            $('input[type="file"]').attr("disabled", "disabled");
+        }
+    }
+
+    /* 自定义menu.js */
+    (function () {
+        console.log("menu_upload_photo.js");
+
+        /*图文*/
+        $(".switch_for_pic").find("button:first").click(function(){
+
+            $(".show_detail_pic").show();
+            $(".policy_detail_more").hide();
+
+        });
+
+        $(".switch_for_pic").find("button:eq(1)").click(function(){
+            $(".show_detail_pic").hide();
+            $(".policy_detail_more").show();
+
+        });
+
+        //未读事件变量
+        var _undoneRemind = '<div class="undone_count">2</div>';
+        console.log(sessionStorage.getItem("loginType"));
+        if(Public.DeviceName() != "Computer"){
+            $("body").append('<div class="menu_fix"></div><div class="menu_bottom" > <ul class="glyphicon-list"> <li><span id="menu_home" class="home" aria-hidden="true"></span><span class="glyphicon-class font-home">我的首页</span></li><li><span id="menu_mypolicy" class="MyPolicy" aria-hidden="true"></span><span class="glyphicon-class">办事大厅</span><div class="undone_count">2</div></li><li><span id="menu_myclaim" class="MyClaim" aria-hidden="true"></span><span class="glyphicon-class">我的保单</span></li><li><span id="menu_weizhi" class="weizhi" aria-hidden="true"></span><span class="glyphicon-class">我的理赔</span></li><li><span id="menu_account" class="Account" aria-hidden="true"></span><span class="glyphicon-class">我的账户</span></li></ul></div>');
+            /*设置bottom_bar的样式*/
+            var str = window.location.href;
+            var href = str.split("/")[str.split("/").length-1].split(".")[0];
+            if(href === "home"){
+                $("#menu_home").toggleClass("home",false);
+                $("#menu_home").toggleClass("home_c",true);
+                $("#menu_home").parent().find(".glyphicon-class").toggleClass("font-home",true);
+                $("#menu_mypolicy").toggleClass("MyPolicy",true);
+                $("#menu_mypolicy").toggleClass("MyPolicy_c",false);
+                $("#menu_mypolicy").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_myclaim").toggleClass("MyClaim",true);
+                $("#menu_myclaim").toggleClass("MyClaim_c",false);
+                $("#menu_myclaim").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_weizhi").toggleClass("weizhi",true);
+                $("#menu_weizhi").toggleClass("weizhi_c",false);
+                $("#menu_weizhi").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_account").toggleClass("Account",true);
+                $("#menu_account").toggleClass("Account_c",false);
+                $("#menu_account").parent().find(".glyphicon-class").toggleClass("font-home",false);
+            } else if (href === "myaccount") {
+                $("#menu_home").toggleClass("home",true);
+                $("#menu_home").toggleClass("home_c",false);
+                $("#menu_home").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_mypolicy").toggleClass("MyPolicy",true);
+                $("#menu_mypolicy").toggleClass("MyPolicy_c",false);
+                $("#menu_mypolicy").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_myclaim").toggleClass("MyClaim",true);
+                $("#menu_myclaim").toggleClass("MyClaim_c",false);
+                $("#menu_myclaim").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_weizhi").toggleClass("weizhi",true);
+                $("#menu_weizhi").toggleClass("weizhi_c",false);
+                $("#menu_weizhi").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_account").toggleClass("Account",false);
+                $("#menu_account").toggleClass("Account_c",true);
+                $("#menu_account").parent().find(".glyphicon-class").toggleClass("font-home",true);
+            } else if (href === "my_policy_list" || href=="my_policy_detail"){
+                $("#menu_home").toggleClass("home",true);
+                $("#menu_home").toggleClass("home_c",false);
+                $("#menu_home").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_mypolicy").toggleClass("MyPolicy",true);
+                $("#menu_mypolicy").toggleClass("MyPolicy_c",false);
+                $("#menu_mypolicy").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_myclaim").toggleClass("MyClaim",false);
+                $("#menu_myclaim").toggleClass("MyClaim_c",true);
+                $("#menu_myclaim").parent().find(".glyphicon-class").toggleClass("font-home",true);
+                $("#menu_weizhi").toggleClass("weizhi",true);
+                $("#menu_weizhi").toggleClass("weizhi_c",false);
+                $("#menu_weizhi").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_account").toggleClass("Account",true);
+                $("#menu_account").toggleClass("Account_c",false);
+                $("#menu_account").parent().find(".glyphicon-class").toggleClass("font-home",false);
+            } else if (href === "claim_photo-upload" || href === "claim" || href=== "claim_list" || href=="get_value_ul"){
+                $("#menu_home").toggleClass("home",true);
+                $("#menu_home").toggleClass("home_c",false);
+                $("#menu_home").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_mypolicy").toggleClass("MyPolicy",true);
+                $("#menu_mypolicy").toggleClass("MyPolicy_c",false);
+                $("#menu_mypolicy").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_myclaim").toggleClass("MyClaim",true);
+                $("#menu_myclaim").toggleClass("MyClaim_c",false);
+                $("#menu_myclaim").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_weizhi").toggleClass("weizhi",false);
+                $("#menu_weizhi").toggleClass("weizhi_c",true);
+                $("#menu_weizhi").parent().find(".glyphicon-class").toggleClass("font-home",true);
+                $("#menu_account").toggleClass("Account",true);
+                $("#menu_account").toggleClass("Account_c",false);
+                $("#menu_account").parent().find(".glyphicon-class").toggleClass("font-home",false);
+            } else if (href === "pendingevents" || href=="message_confirm"){
+                $("#menu_home").toggleClass("home",true);
+                $("#menu_home").toggleClass("home_c",false);
+                $("#menu_home").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_mypolicy").toggleClass("MyPolicy",false);
+                $("#menu_mypolicy").toggleClass("MyPolicy_c",true);
+                $("#menu_mypolicy").parent().find(".glyphicon-class").toggleClass("font-home",true);
+                $("#menu_myclaim").toggleClass("MyClaim",true);
+                $("#menu_myclaim").toggleClass("MyClaim_c",false);
+                $("#menu_myclaim").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_weizhi").toggleClass("weizhi",true);
+                $("#menu_weizhi").toggleClass("weizhi_c",false);
+                $("#menu_weizhi").parent().find(".glyphicon-class").toggleClass("font-home",false);
+                $("#menu_account").toggleClass("Account",true);
+                $("#menu_account").toggleClass("Account_c",false);
+                $("#menu_account").parent().find(".glyphicon-class").toggleClass("font-home",false);
+            };
+        }
+        /*跳转*/
+        $("#menu_home").parent().click(function(){
+            // window.location.href = "home.html";
+            onLoadBefore("home.html");
+        });
+        $("#menu_account").parent().click(function(){
+            // window.location.href = "myaccount.html";
+            onLoadBefore("myaccount.html");
+        });
+        $("#menu_myclaim").parent().click(function(){
+            // window.location.href = "my_policy_list.html";
+            onLoadBefore("my_policy_list.html");
+        })
+        $("#menu_weizhi").parent().click(function(){
+            // window.location.href = "claim.html";
+            onLoadBefore("claim.html");
+        });
+        $("#menu_mypolicy").parent().click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("pendingevents.html");
+        })
+        $(".clearfix").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("home.html");
+        })
+        $(".mobile-firstlevel").eq(0).find("a").eq(0).click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("my_policy_list.html");
+        })
+        $(".mobile-firstlevel").eq(1).find("a").eq(0).click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("claim.html");
+        })
+        $(".mobile-firstlevel").eq(2).find("a").eq(0).click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("pay.html");
+        })
+        $(".mobile-firstlevel").eq(3).find("a").eq(0).click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("pendingevents.html");
+        })
+        $(".mobile-firstlevel").eq(4).find("a").eq(0).click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("serviceprogress2.html");
+        })
+        $(".mobile-firstlevel").eq(1).next().find("li").eq(0).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("claim_list.html");
+        })
+        $(".mobile-firstlevel").eq(1).next().find("li").eq(1).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("claim.html#claim_guide_1");
+        })
+        $(".mobile-firstlevel").eq(3).next().find("li").eq(0).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("my-1.html");
+        })
+        $(".mobile-firstlevel").eq(3).next().find("li").eq(1).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("my-order.html");
+        })
+        $(".navbar-one .navbar-brand").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("home.html");
+        })
+        $(".navbar-one").find("li").eq(0).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("my_policy_list.html");
+        })
+        $(".navbar-one").find("li").eq(1).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("claim.html");
+        })
+        $(".navbar-one").find("li").eq(4).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("pay.html");
+        })
+        $(".navbar-one").find("li").eq(5).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("pendingevents.html");
+        })
+        $(".navbar-one").find("li").eq(8).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("serviceprogress2.html");
+        })
+        $(".contact-dropdown-menu").find("li").eq(0).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("contact_agency.html");
+        })
+        $(".contact-dropdown-menu").find("li").eq(2).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("hotline.html");
+        })
+        $(".contact-dropdown-menu").find("li").eq(4).find("a").click(function(){
+            // window.location.href = "pendingevents.html";
+            onLoadBefore("contact_us.html.html");
+        })
+        function onLoadBefore(url) {
+            $('.leavePage').show();
+            $('.leave_alert').show();
+
+            /* 保存并离开 */
+            $('.save_leave').unbind('click');
+            $('.save_leave').click(function(){
+                $('.leavePage').hide();
+                $('.leave_alert').hide();
+                sendAjax(function(data) {
+                    console.log("next button")
+                    window.location.href = url;
+                }, "/Claim/NextButton");
+            });
+
+            /* 不保存直接离开 */
+            $('.not_leave').unbind('click');
+            $('.not_leave').click(function(){
+                $('.leavePage').hide();
+                $('.leave_alert').hide();
+                //window.location.href = url;
+                sendAjax(function(data) {
+                    sendAjax(function(data) {
+                        window.location.href = url;
+                    }, "/DealClaim/FinishProcess");
+                    console.log("delete all pictures")
+                }, "/Claim/DeleteAllPic");
+            });
+
+            /* 取消 */
+            $('.cancel_leave').unbind('click');
+            $('.cancel_leave').click(function(){
+                $('.leavePage').hide();
+                $('.leave_alert').hide();
+            });
+        }
+    })();
+
+    //$('.aiabase.parbase.button.section').eq(0).find('button').hide();
+    $('.aiabase.parbase.button.section').eq(0).find('button').click(function() {
+            sendAjax(function(data) {
+                //console.log("next button")
+                window.location.href = "online_compensation_bankInfo.html";
+            }, "/Claim/NextButton");
+        }
+    );
+
+    $('.gotoNext').find('button').unbind('click');
+    $('.gotoNext').find('button').click(function(event) {
+        sendAjax(function(data) {
+            console.log("next button")
+            window.location.href = "online_compensation_bankInfo.html";
+        }, "/Claim/NextButton");
+    });
+
+    $('.gotoLast').find('button').unbind('click');
+    $('.gotoLast').find('button').click(function(event) {
+        window.location.href = "online_compensation_message.html";
+    });
+
+
+
+});
+// //APP自动调用
+function androidUploadPic(thumbnail, picture, picType) {
+    uploadPicAppOuter(thumbnail, picture, picType);
+}
+
+function iOSUploadPic(thumbnail, picture, picType) {
+    uploadPicAppOuter(thumbnail, picture, picType);
+}
+
+function checkNext(){
+    var count = 0;
+    var countReceipt = $(".photoUpload.receipt li").length;
+    var countCase = $(".photoUpload.case li").length;
+    var countExpense = $(".photoUpload.expense li").length;
+
+    if (countReceipt > 1) {
+        count++;
+    }
+    if (countCase > 1) {
+        count++;
+    }
+    if ($('input[type="checkbox"]').is(':checked') && countExpense > 1) {
+        count++;
+    }
+    if($('input[type="checkbox"]').is(':checked') && count == 3){
+        $(".gotoNext button").attr('disabled', false);
+    }else if (!$('input[type="checkbox"]').is(':checked') && count == 2) {
+        $(".gotoNext button").attr('disabled', false);
+    } else {
+        $(".gotoNext button").attr('disabled', true);
+    }
+
+}
